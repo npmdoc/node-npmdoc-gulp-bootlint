@@ -1,0 +1,222 @@
+<div class="apidocDiv">
+<style>
+/*csslint
+*/
+.apidocDiv {
+    background: #fff;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.apidocDiv a[href] {
+    color: #33f;
+    font-weight: bold;
+    text-decoration: none;
+}
+.apidocDiv a[href]:hover {
+    text-decoration: underline;
+}
+.apidocCodeCommentSpan {
+    background: #bbf;
+    color: #000;
+    display: block;
+}
+.apidocCodeKeywordSpan {
+    color: #d00;
+    font-weight: bold;
+}
+.apidocCodePre {
+    background: #eef;
+    border: 1px solid;
+    color: #777;
+    padding: 5px;
+    white-space: pre-wrap;
+}
+.apidocFooterDiv {
+    margin-top: 20px;
+    text-align: center;
+}
+.apidocModuleLi {
+    margin-top: 10px;
+}
+.apidocSectionDiv {
+    border-top: 1px solid;
+    margin-top: 20px;
+}
+.apidocSignatureSpan {
+    color: #777;
+    font-weight: bold;
+}
+</style>
+<h1>api documentation for
+    <a
+
+        href="https://github.com/tschortsch/gulp-bootlint"
+
+    >gulp-bootlint (v0.8.1)</a>
+</h1>
+<h4>A gulp wrapper for Bootlint, the HTML linter for Bootstrap projects</h4>
+<div class="apidocSectionDiv"><a
+    href="#apidoc.tableOfContents"
+    id="apidoc.tableOfContents"
+><h1>table of contents</h1></a><ol>
+
+    <li class="apidocModuleLi"><a href="#apidoc.module.gulp-bootlint">module gulp-bootlint</a><ol>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.gulp-bootlint.gulp-bootlint">
+            function <span class="apidocSignatureSpan"></span>gulp-bootlint
+            <span class="apidocSignatureSpan">(options)</span>
+            </a>
+
+        </li>
+
+    </ol></li>
+
+</ol></div>
+
+<div class="apidocSectionDiv">
+<h1><a href="#apidoc.module.gulp-bootlint" id="apidoc.module.gulp-bootlint">module gulp-bootlint</a></h1>
+
+
+    <h2>
+        <a href="#apidoc.element.gulp-bootlint.gulp-bootlint" id="apidoc.element.gulp-bootlint.gulp-bootlint">
+        function <span class="apidocSignatureSpan"></span>gulp-bootlint
+        <span class="apidocSignatureSpan">(options)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">function gulpBootlint(options) {
+    var hasError = false,
+        hasWarning = false,
+        log, stream;
+
+<span class="apidocCodeCommentSpan">    /**
+     * Reporter function for linting errors and warnings.
+     *
+     * @param file Current file object.
+     * @param lint Current linting error.
+     * @param isError True if this is an error.
+     * @param isWarning True if this is a warning.
+     * @param errorLocation Error location object.
+     */
+</span>    var defaultReportFn = function(file, lint, isError, isWarning, errorLocation) {
+        var lintId = (isError) ? gutil.colors.bgRed.white(lint.id) : gutil.colors.bgYellow.white(lint.id);
+        var message = &#x27;&#x27;;
+        if (errorLocation) {
+            message = file.path + &#x27;:&#x27; + (errorLocation.line + 1) + &#x27;:&#x27; + (errorLocation.column + 1) + &#x27; &#x27; + lintId + &#x27; &#x27; + lint.
+message;
+        } else {
+            message = file.path + &#x27;: &#x27; + lintId + &#x27; &#x27; + lint.message;
+        }
+
+        if (isError) {
+            log.error(message);
+        } else {
+            log.warning(message);
+        }
+    };
+
+    /**
+     * Reporter function for linting summary.
+     *
+     * @param file File which was linted.
+     * @param errorCount Total count of errors in file.
+     * @param warningCount Total count of warnings in file.
+     */
+    var defaultSummaryReportFn = function(file, errorCount, warningCount) {
+        if (errorCount &#x3e; 0 || warningCount &#x3e; 0) {
+            var message = &#x27;&#x27;;
+            if (errorCount &#x3e; 0) {
+                message += gutil.colors.red(errorCount + &#x27; lint &#x27; + (errorCount === 1 ? &#x27;error&#x27; : &#x27;errors&#x27;));
+            }
+
+            if (warningCount &#x3e; 0) {
+                if (errorCount &#x3e; 0) {
+                    message += &#x27; and &#x27;;
+                }
+                message += gutil.colors.yellow(warningCount + &#x27; lint &#x27; + (warningCount === 1 ? &#x27;warning&#x27; : &#x27;warnings&#x27;));
+            }
+            message += &#x27; found in file &#x27; + file.path;
+            log.notice(message);
+        } else {
+            log.info(gutil.colors.green(file.path + &#x27; is lint free!&#x27;));
+        }
+    };
+
+    options = merge({
+        stoponerror: false,
+        stoponwarning: false,
+        loglevel: &#x27;error&#x27;,
+        disabledIds: [],
+        issues: [],
+        reportFn: defaultReportFn,
+        summaryReportFn: defaultSummaryReportFn
+    }, options);
+
+    log = new Log(options.loglevel);
+
+    // creating a stream through which each file will pass
+    stream = through.obj(function (file, enc, cb) {
+        var errorCount = 0,
+            warningCount = 0;
+
+        if (file.isNull()) {
+            return cb(null, file);
+        }
+
+        if (file.isStream()) {
+            this.emit(&#x27;error&#x27;, new PluginError(PLUGIN_NAME, &#x27;Streams are not supported!&#x27;));
+            return cb();
+        }
+
+        var reporter = function (lint) {
+            var isError = (lint.id[0] === &#x27;E&#x27;),
+                isWarning = (lint.id[0] === &#x27;W&#x27;),
+                errorElementsAvailable = false;
+
+            if (lint.elements) {
+                lint.elements.each(function (_, element) {
+                    if(options.reportFn){
+                        options.reportFn(file, lint, isError, isWarning, element.startLocation);
+                    }
+                    errorElementsAvailable = true;
+                });
+            }
+            if (!errorElementsAvailable &#x26;&#x26; options.reportFn) {
+                options.reportFn(file, lint, isError, isWarning, null);
+            }
+
+            if (isError) {
+                ++errorCount;
+                hasError = true;
+            }
+            if (isWarning) {
+                ++warningCount;
+                hasWarning = true;
+            }
+            options.issues.push(lint);
+        };
+
+        log.info(gutil.colors.gray(&#x27;Linting file &#x27; + file.path));
+        bootlint.lintHtml(file.contents.toString(), reporter, options.disabledIds);
+
+        if(options.summaryReportFn){
+            options.summaryReportFn(file, errorCount, warningCount);
+        }
+
+        return cb(null, file);
+    }, function (cb) {
+        if (hasError &#x26;&#x26; options.stoponerror ) {
+            this.emit(&#x27;error&#x27;, new PluginError(PLUGIN_NAME, ...</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+</div>
+
+<div class="apidocFooterDiv">
+    [ this document was created with
+    <a href="https://github.com/kaizhu256/node-utility2" target="_blank">utility2</a>
+    ]
+</div>
+</div>
